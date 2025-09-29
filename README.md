@@ -1,4 +1,6 @@
-# senEstate - Community AI Agents for Real Estate
+# senEstate - Community of Estate Agents
+
+<img width="2000" height="1000" alt="senEstatewh" src="https://github.com/user-attachments/assets/18983e83-ee1b-4343-8a1d-6b09785ed93a" />
 
 senEstate is a powerful, open-source platform that allows real estate professionals to create, manage, and deploy personalized AI assistants. These agents can be trained on specific property listings and neighborhood data to provide instant, 24/7 support to potential clients, automating lead qualification and answering common questions.
 
