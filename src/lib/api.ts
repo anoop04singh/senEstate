@@ -245,70 +245,21 @@ export const addTextKnowledge = async (replicaId: string, text: string, title?: 
   return data;
 };
 
-export const requestFileUpload = async (replicaId: string, filename: string, title?: string) => {
-    const body: { filename: string; title?: string } = { filename };
-    if (title) body.title = title;
-    console.log(`[API] Requesting file upload for replica ${replicaId}:`, body);
-
-    const response = await fetch(`${SENSAY_API_BASE_URL}/replicas/${replicaId}/knowledge-base`, {
-        method: 'POST',
-        headers: getAdminHeaders(),
-        body: JSON.stringify(body),
-    });
-
-    if (!response.ok) {
-        const errorData = await response.json();
-        console.error("[API] Failed to initiate file upload:", errorData);
-        showError(`Failed to initiate file upload: ${errorData.message || 'Unknown error'}`);
-        return null;
-    }
-    
-    const data = await response.json();
-    console.log("[API] File upload request successful, received signed URL info:", data);
-    return data;
-};
-
-export const uploadFileToSignedUrl = async (signedUrl: string, file: File) => {
-    console.log(`[API] Uploading file "${file.name}" to signed URL.`);
-    const response = await fetch(signedUrl, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': file.type,
-        },
-        body: file,
-    });
-
-    if (!response.ok) {
-        console.error("[API] File upload to signed URL failed:", response.statusText);
-        showError('File upload failed.');
-        return false;
-    }
-
-    console.log("[API] File uploaded successfully to signed URL.");
-    showSuccess('File uploaded successfully! Processing has started.');
-    return true;
-};
-
-export const addUrlKnowledge = async (replicaId: string, url: string, title?: string) => {
-  const body: { url: string; title?: string } = { url };
-  if (title) body.title = title;
-  console.log(`[API] Adding URL knowledge to replica ${replicaId}:`, body);
-
-  const response = await fetch(`${SENSAY_API_BASE_URL}/replicas/${replicaId}/knowledge-base`, {
-    method: "POST",
+export const deleteKnowledgeBaseItem = async (replicaId: string, knowledgeId: number) => {
+  console.log(`[API] Deleting knowledge base item ${knowledgeId} from replica ${replicaId}`);
+  const response = await fetch(`${SENSAY_API_BASE_URL}/replicas/${replicaId}/knowledge-base/${knowledgeId}`, {
+    method: 'DELETE',
     headers: getAdminHeaders(),
-    body: JSON.stringify(body),
   });
 
   if (!response.ok) {
     const errorData = await response.json();
-    console.error("[API] Failed to add URL knowledge:", errorData);
-    showError(`Failed to add URL knowledge: ${errorData.message || 'Unknown error'}`);
+    console.error("[API] Failed to delete knowledge base item:", errorData);
+    showError(`Failed to delete item: ${errorData.message || 'Unknown error'}`);
     return null;
   }
-  
-  const data = await response.json();
-  console.log("[API] URL knowledge added successfully:", data);
-  showSuccess("URL knowledge added! Processing has started.");
-  return data;
+
+  console.log(`[API] Knowledge base item ${knowledgeId} deleted successfully.`);
+  showSuccess("Knowledge base item deleted.");
+  return { success: true };
 };
