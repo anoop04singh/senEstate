@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Upload, FileText, Loader2, CheckCircle, XCircle, RefreshCw, Info, Link as LinkIcon } from "lucide-react";
 import { getKnowledgeBase, addTextKnowledge, requestFileUpload, uploadFileToSignedUrl, addUrlKnowledge } from "@/lib/api";
 import { KnowledgeBaseItem } from "@/types";
-import { useState, ChangeEvent, FormEvent } from "react";
+import { useState, ChangeEvent, FormEvent, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDistanceToNow } from 'date-fns';
@@ -20,7 +20,7 @@ const StatusBadge = ({ status }: { status: KnowledgeBaseItem['status'] }) => {
     FILE_UPLOADED: { label: "Uploaded", className: "bg-blue-500", icon: <Upload className="h-3 w-3" /> },
     RAW_TEXT: { label: "Processing", className: "bg-yellow-500", icon: <Loader2 className="h-3 w-3 animate-spin" /> },
     PROCESSED_TEXT: { label: "Processing", className: "bg-yellow-500", icon: <Loader2 className="h-3 w-3 animate-spin" /> },
-    VECTOR_CREATED: { label: "Processing", className: "bg-yellow-500", icon: <Loader2 className="h-3 w-3 animate-spin" /> },
+    VECTOR_CREATED: { label: "Ready", className: "bg-green-600", icon: <CheckCircle className="h-3 w-3" /> },
     READY: { label: "Ready", className: "bg-green-600", icon: <CheckCircle className="h-3 w-3" /> },
     UNPROCESSABLE: { label: "Error", className: "bg-red-600", icon: <XCircle className="h-3 w-3" /> },
   };
@@ -45,10 +45,17 @@ const ManageKnowledge = () => {
   const [url, setUrl] = useState("");
   const [urlTitle, setUrlTitle] = useState("");
 
+  const terminalStatuses: KnowledgeBaseItem['status'][] = ['VECTOR_CREATED', 'READY', 'UNPROCESSABLE'];
+
   const { data: knowledgeItems = [], isLoading, isError, refetch, isRefetching } = useQuery<KnowledgeBaseItem[]>({
     queryKey: ["knowledgeBase", replicaId],
     queryFn: () => getKnowledgeBase(replicaId!),
     enabled: !!replicaId,
+    refetchInterval: (query) => {
+      const data = query.state.data as KnowledgeBaseItem[] | undefined;
+      const isProcessing = data?.some(item => !terminalStatuses.includes(item.status));
+      return isProcessing ? 5000 : false;
+    },
   });
 
   const addTextMutation = useMutation({
@@ -56,7 +63,7 @@ const ManageKnowledge = () => {
     onSuccess: () => {
       setTextContent("");
       setTextTitle("");
-      setTimeout(() => queryClient.invalidateQueries({ queryKey: ["knowledgeBase", replicaId] }), 1000);
+      queryClient.invalidateQueries({ queryKey: ["knowledgeBase", replicaId] });
     },
   });
 
@@ -76,7 +83,7 @@ const ManageKnowledge = () => {
       setFileTitle("");
       const fileInput = document.getElementById('file-input') as HTMLInputElement;
       if(fileInput) fileInput.value = "";
-      setTimeout(() => queryClient.invalidateQueries({ queryKey: ["knowledgeBase", replicaId] }), 1000);
+      queryClient.invalidateQueries({ queryKey: ["knowledgeBase", replicaId] });
     },
   });
 
@@ -85,7 +92,7 @@ const ManageKnowledge = () => {
     onSuccess: () => {
       setUrl("");
       setUrlTitle("");
-      setTimeout(() => queryClient.invalidateQueries({ queryKey: ["knowledgeBase", replicaId] }), 1000);
+      queryClient.invalidateQueries({ queryKey: ["knowledgeBase", replicaId] });
     },
   });
 
