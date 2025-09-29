@@ -4,14 +4,15 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Upload, FileText, Loader2, CheckCircle, XCircle, RefreshCw, Info } from "lucide-react";
-import { getKnowledgeBase, addTextKnowledge, requestFileUpload, uploadFileToSignedUrl } from "@/lib/api";
+import { Upload, FileText, Loader2, CheckCircle, XCircle, RefreshCw, Info, Link as LinkIcon } from "lucide-react";
+import { getKnowledgeBase, addTextKnowledge, requestFileUpload, uploadFileToSignedUrl, addUrlKnowledge } from "@/lib/api";
 import { KnowledgeBaseItem } from "@/types";
 import { useState, ChangeEvent, FormEvent } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDistanceToNow } from 'date-fns';
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const StatusBadge = ({ status }: { status: KnowledgeBaseItem['status'] }) => {
   const statusMap: { [key in KnowledgeBaseItem['status']]: { label: string; className: string; icon: JSX.Element } } = {
@@ -41,6 +42,8 @@ const ManageKnowledge = () => {
   const [textTitle, setTextTitle] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileTitle, setFileTitle] = useState("");
+  const [url, setUrl] = useState("");
+  const [urlTitle, setUrlTitle] = useState("");
 
   const { data: knowledgeItems = [], isLoading, isError, refetch, isRefetching } = useQuery<KnowledgeBaseItem[]>({
     queryKey: ["knowledgeBase", replicaId],
@@ -77,6 +80,15 @@ const ManageKnowledge = () => {
     },
   });
 
+  const addUrlMutation = useMutation({
+    mutationFn: (data: { url: string; title?: string }) => addUrlKnowledge(replicaId!, data.url, data.title),
+    onSuccess: () => {
+      setUrl("");
+      setUrlTitle("");
+      setTimeout(() => queryClient.invalidateQueries({ queryKey: ["knowledgeBase", replicaId] }), 1000);
+    },
+  });
+
   const handleTextSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (textContent.trim() && !addTextMutation.isPending) {
@@ -97,62 +109,80 @@ const ManageKnowledge = () => {
     }
   };
 
+  const handleUrlSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    if (url.trim() && !addUrlMutation.isPending) {
+      addUrlMutation.mutate({ url: url.trim(), title: urlTitle.trim() || undefined });
+    }
+  };
+
   return (
     <div className="space-y-8">
       <h1 className="text-3xl font-bold">Manage Knowledge Base</h1>
       
-      <div className="grid md:grid-cols-2 gap-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Upload a File</CardTitle>
-            <CardDescription>Upload property brochures, guides, etc. (PDF, DOCX, TXT).</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleFileUpload} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="file-title">Title (Optional)</Label>
-                <Input id="file-title" placeholder="e.g., 123 Main St Brochure" value={fileTitle} onChange={(e) => setFileTitle(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="file-input">File</Label>
-                <Input id="file-input" type="file" onChange={handleFileChange} />
-              </div>
-              <Button type="submit" disabled={!selectedFile || fileUploadMutation.isPending}>
-                {fileUploadMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
-                Upload File
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Add Text Content</CardTitle>
-            <CardDescription>Add short info like FAQs or market updates.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleTextSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="text-title">Title (Optional)</Label>
-                <Input id="text-title" placeholder="e.g., Common Buyer Questions" value={textTitle} onChange={(e) => setTextTitle(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="text-content">Content</Label>
-                <Textarea 
-                  id="text-content"
-                  placeholder="Enter text content here..." 
-                  rows={4} 
-                  value={textContent}
-                  onChange={(e) => setTextContent(e.target.value)}
-                />
-              </div>
-              <Button type="submit" disabled={!textContent.trim() || addTextMutation.isPending}>
-                {addTextMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
-                Add Text
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Add to Knowledge Base</CardTitle>
+          <CardDescription>Add new information for your AI agent to learn from.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="text">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="text">Add Text</TabsTrigger>
+              <TabsTrigger value="file">Upload File</TabsTrigger>
+              <TabsTrigger value="url">Add from URL</TabsTrigger>
+            </TabsList>
+            <TabsContent value="text" className="pt-6">
+              <form onSubmit={handleTextSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="text-title">Title (Optional)</Label>
+                  <Input id="text-title" placeholder="e.g., Common Buyer Questions" value={textTitle} onChange={(e) => setTextTitle(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="text-content">Content</Label>
+                  <Textarea id="text-content" placeholder="Enter text content here..." rows={4} value={textContent} onChange={(e) => setTextContent(e.target.value)} />
+                </div>
+                <Button type="submit" disabled={!textContent.trim() || addTextMutation.isPending}>
+                  {addTextMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
+                  Add Text
+                </Button>
+              </form>
+            </TabsContent>
+            <TabsContent value="file" className="pt-6">
+              <form onSubmit={handleFileUpload} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="file-title">Title (Optional)</Label>
+                  <Input id="file-title" placeholder="e.g., 123 Main St Brochure" value={fileTitle} onChange={(e) => setFileTitle(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="file-input">File</Label>
+                  <Input id="file-input" type="file" onChange={handleFileChange} />
+                </div>
+                <Button type="submit" disabled={!selectedFile || fileUploadMutation.isPending}>
+                  {fileUploadMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                  Upload File
+                </Button>
+              </form>
+            </TabsContent>
+            <TabsContent value="url" className="pt-6">
+              <form onSubmit={handleUrlSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="url-title">Title (Optional)</Label>
+                  <Input id="url-title" placeholder="e.g., Wikipedia Article on Local Market" value={urlTitle} onChange={(e) => setUrlTitle(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="url-input">Website or YouTube URL</Label>
+                  <Input id="url-input" type="url" placeholder="https://..." value={url} onChange={(e) => setUrl(e.target.value)} />
+                </div>
+                <Button type="submit" disabled={!url.trim() || addUrlMutation.isPending}>
+                  {addUrlMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <LinkIcon className="mr-2 h-4 w-4" />}
+                  Add from URL
+                </Button>
+              </form>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -185,7 +215,7 @@ const ManageKnowledge = () => {
               <TableBody>
                 {knowledgeItems.map((item) => (
                   <TableRow key={item.id}>
-                    <TableCell className="font-medium">{item.title || "Text Content"}</TableCell>
+                    <TableCell className="font-medium">{item.title || "Untitled"}</TableCell>
                     <TableCell className="capitalize">{item.type}</TableCell>
                     <TableCell><StatusBadge status={item.status} /></TableCell>
                     <TableCell>{formatDistanceToNow(new Date(item.updatedAt), { addSuffix: true })}</TableCell>

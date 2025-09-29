@@ -210,3 +210,27 @@ export const uploadFileToSignedUrl = async (signedUrl: string, file: File) => {
     showSuccess('File uploaded successfully! Processing has started.');
     return true;
 };
+
+export const addUrlKnowledge = async (replicaId: string, url: string, title?: string) => {
+  const body: { url: string; title?: string } = { url };
+  if (title) body.title = title;
+  console.log(`[API] Adding URL knowledge to replica ${replicaId}:`, body);
+
+  const response = await fetch(`${SENSAY_API_BASE_URL}/replicas/${replicaId}/knowledge-base`, {
+    method: "POST",
+    headers: getAdminHeaders(),
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    console.error("[API] Failed to add URL knowledge:", errorData);
+    showError(`Failed to add URL knowledge: ${errorData.message || 'Unknown error'}`);
+    return null;
+  }
+  
+  const data = await response.json();
+  console.log("[API] URL knowledge added successfully:", data);
+  showSuccess("URL knowledge added! Processing has started.");
+  return data;
+};
