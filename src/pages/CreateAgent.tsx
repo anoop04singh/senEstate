@@ -12,16 +12,18 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { createReplica } from "@/lib/api";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { Loader2 } from "lucide-react";
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
   shortDescription: z.string().min(10, "Description must be at least 10 characters."),
   greeting: z.string().min(10, "Welcome message must be at least 10 characters."),
   slug: z.string().min(3, "URL slug must be at least 3 characters.").regex(/^[a-z0-9-]+$/, "Slug can only contain lowercase letters, numbers, and hyphens."),
+  profileImage: z.string().url("Must be a valid URL.").optional().or(z.literal('')),
 });
 
 const CreateAgent = () => {
@@ -35,16 +37,27 @@ const CreateAgent = () => {
       shortDescription: "",
       greeting: "",
       slug: "",
+      profileImage: "",
     },
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
-    const result = await createReplica(values);
-    if (result) {
-      navigate("/");
+    try {
+      const result = await createReplica(values);
+      if (result) {
+        navigate("/");
+      }
+    } catch (error) {
+      if (error instanceof Error && error.message === "slug_taken") {
+        form.setError("slug", {
+          type: "manual",
+          message: "This web address is already taken. Please choose another one.",
+        });
+      }
+    } finally {
+      setIsSubmitting(false);
     }
-    setIsSubmitting(false);
   }
 
   return (
@@ -52,6 +65,7 @@ const CreateAgent = () => {
       <Card>
         <CardHeader>
           <CardTitle>Create New AI Agent</CardTitle>
+          <CardDescription>Fill out the details below to launch your new real estate assistant.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -64,6 +78,19 @@ const CreateAgent = () => {
                     <FormLabel>AI Assistant Name</FormLabel>
                     <FormControl>
                       <Input placeholder="e.g., John's Real Estate Assistant" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="profileImage"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Profile Image URL (Optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="https://example.com/image.png" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -108,8 +135,8 @@ const CreateAgent = () => {
                   </FormItem>
                 )}
               />
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Creating..." : "Create Agent"}
+              <Button type="submit" disabled={isSubmitting} className="w-full md:w-auto">
+                {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating...</> : "Create Agent"}
               </Button>
             </form>
           </Form>

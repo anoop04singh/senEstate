@@ -10,6 +10,7 @@ import { useState, useEffect, useRef, FormEvent } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
 
 const AgentChat = () => {
   const { replicaId } = useParams<{ replicaId: string }>();
@@ -37,14 +38,13 @@ const AgentChat = () => {
 
   useEffect(() => {
     if (replica && replica.introduction) {
-      // Avoid adding the greeting message if chat history already exists
       if (messages.length === 0) {
         setMessages([
           { id: uuidv4(), role: "assistant", content: replica.introduction },
         ]);
       }
     }
-  }, [replica]);
+  }, [replica, messages.length]);
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -55,7 +55,6 @@ const AgentChat = () => {
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!input.trim() || chatMutation.isPending) return;
-
     const userMessage: Message = { id: uuidv4(), role: "user", content: input.trim() };
     setMessages((prev) => [...prev, userMessage]);
     chatMutation.mutate(input.trim());
@@ -71,8 +70,8 @@ const AgentChat = () => {
   }
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-muted/40 p-4">
-      <Card className="w-full max-w-2xl h-[90vh] flex flex-col">
+    <div className="flex justify-center items-center h-screen bg-background p-4">
+      <Card className="w-full max-w-2xl h-full flex flex-col shadow-2xl">
         <CardHeader className="flex flex-row items-center gap-4 border-b">
           <Avatar>
             <AvatarImage src={replica.profile_image} alt={replica.name} />
@@ -84,37 +83,44 @@ const AgentChat = () => {
           </div>
         </CardHeader>
         <CardContent ref={scrollAreaRef} className="flex-1 overflow-y-auto p-4 space-y-4">
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={cn(
-                "flex items-start gap-3 max-w-[80%]",
-                message.role === "user" ? "ml-auto flex-row-reverse" : ""
-              )}
-            >
-              <Avatar className="w-8 h-8">
-                <AvatarFallback>
-                  {message.role === 'assistant' ? <Bot size={18} /> : <User size={18} />}
-                </AvatarFallback>
-              </Avatar>
-              <div
+          <AnimatePresence>
+            {messages.map((message) => (
+              <motion.div
+                key={message.id}
+                layout
+                initial={{ opacity: 0, scale: 0.8, y: 50 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 className={cn(
-                  "rounded-lg p-3 text-sm",
-                  message.role === "user"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted"
+                  "flex items-start gap-3 max-w-[80%]",
+                  message.role === "user" ? "ml-auto flex-row-reverse" : ""
                 )}
               >
-                <p className="whitespace-pre-wrap">{message.content}</p>
-              </div>
-            </div>
-          ))}
+                <Avatar className="w-8 h-8">
+                  <AvatarFallback>
+                    {message.role === 'assistant' ? <Bot size={18} /> : <User size={18} />}
+                  </AvatarFallback>
+                </Avatar>
+                <div
+                  className={cn(
+                    "rounded-lg p-3 text-sm shadow",
+                    message.role === "user"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted"
+                  )}
+                >
+                  <p className="whitespace-pre-wrap">{message.content}</p>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
           {chatMutation.isPending && (
              <div className="flex items-start gap-3">
                <Avatar className="w-8 h-8">
                  <AvatarFallback><Bot size={18} /></AvatarFallback>
                </Avatar>
-               <div className="bg-muted rounded-lg p-3 text-sm">
+               <div className="bg-muted rounded-lg p-3 text-sm shadow">
                  <Loader2 className="h-4 w-4 animate-spin" />
                </div>
              </div>
