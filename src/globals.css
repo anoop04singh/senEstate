@@ -74,7 +74,9 @@
   body {
     @apply bg-background text-foreground;
     background-color: hsl(var(--background));
-    background-image: radial-gradient(circle at 1px 1px, hsl(var(--border)) 1px, transparent 0);
-    background-size: 2rem 2rem;
+    background-image: 
+      radial-gradient(ellipse at top, hsla(var(--primary)/.1), transparent 70%),
+      radial-gradient(circle at 1px 1px, hsl(var(--border)) 1px, transparent 0);
+    background-size: 100% 100%, 2rem 2rem;
   }
 }
