@@ -6,8 +6,10 @@ const SENSAY_API_KEY = import.meta.env.VITE_SENSAY_API_KEY;
 
 const getHeaders = () => {
   const userId = localStorage.getItem("sensay_user_id");
+  console.log(`[API] Using User ID: ${userId}`);
 
   if (!SENSAY_API_KEY) {
+    console.error("[API] API Key not found in .env file.");
     throw new Error("API Key not found. Please set VITE_SENSAY_API_KEY in your .env file.");
   }
 
@@ -25,8 +27,10 @@ const getHeaders = () => {
 };
 
 export const createUser = async (userId: string) => {
+  console.log(`[API] Initiating user creation for ID: ${userId}`);
   if (!SENSAY_API_KEY) {
     showError("API Key not configured.");
+    console.error("[API] createUser failed: API Key not configured.");
     throw new Error("API Key not found. Please set VITE_SENSAY_API_KEY in your .env file.");
   }
 
@@ -42,23 +46,28 @@ export const createUser = async (userId: string) => {
 
   if (!response.ok) {
     const errorData = await response.json();
-    console.error("Failed to create user:", errorData);
+    console.error("[API] Failed to create user:", errorData);
     showError("Failed to create user.");
     return null;
   }
 
-  return response.json();
+  const data = await response.json();
+  console.log("[API] User created successfully:", data);
+  return data;
 };
 
 export const getReplicas = async () => {
+  console.log("[API] Fetching replicas...");
   const response = await fetch(`${SENSAY_API_BASE_URL}/replicas`, {
     headers: getHeaders(),
   });
   if (!response.ok) {
+    console.error("[API] Failed to fetch AI agents:", response.statusText);
     showError("Failed to fetch AI agents.");
     return [];
   }
   const data = await response.json();
+  console.log("[API] Replicas fetched successfully:", data.items);
   return data.items || [];
 };
 
@@ -69,8 +78,10 @@ export const createReplica = async (replicaData: {
   slug: string;
 }) => {
   const userId = localStorage.getItem("sensay_user_id");
+  console.log("[API] Initiating replica creation with data:", replicaData);
   if (!userId) {
     showError("User ID not found. Cannot create agent.");
+    console.error("[API] createReplica failed: User ID not found.");
     return null;
   }
 
@@ -89,29 +100,36 @@ export const createReplica = async (replicaData: {
 
   if (!response.ok) {
     const errorData = await response.json();
+    console.error("[API] Failed to create agent:", errorData);
     showError(`Failed to create agent: ${errorData.message || 'Unknown error'}`);
     return null;
   }
   
+  const data = await response.json();
+  console.log("[API] AI Agent created successfully:", data);
   showSuccess("AI Agent created successfully!");
-  return response.json();
+  return data;
 };
 
 export const getKnowledgeBase = async (replicaId: string) => {
+  console.log(`[API] Fetching knowledge base for replica: ${replicaId}`);
   const response = await fetch(`${SENSAY_API_BASE_URL}/replicas/${replicaId}/knowledge-base`, {
     headers: getHeaders(),
   });
   if (!response.ok) {
+    console.error(`[API] Failed to fetch knowledge base for replica ${replicaId}:`, response.statusText);
     showError("Failed to fetch knowledge base.");
     return [];
   }
   const data = await response.json();
+  console.log(`[API] Knowledge base for replica ${replicaId} fetched successfully:`, data.items);
   return data.items || [];
 };
 
 export const addTextKnowledge = async (replicaId: string, text: string, title?: string) => {
   const body: { text: string; title?: string } = { text };
   if (title) body.title = title;
+  console.log(`[API] Adding text knowledge to replica ${replicaId}:`, body);
 
   const response = await fetch(`${SENSAY_API_BASE_URL}/replicas/${replicaId}/knowledge-base`, {
     method: "POST",
@@ -121,17 +139,21 @@ export const addTextKnowledge = async (replicaId: string, text: string, title?: 
 
   if (!response.ok) {
     const errorData = await response.json();
+    console.error("[API] Failed to add text knowledge:", errorData);
     showError(`Failed to add text knowledge: ${errorData.message || 'Unknown error'}`);
     return null;
   }
   
+  const data = await response.json();
+  console.log("[API] Text knowledge added successfully:", data);
   showSuccess("Text knowledge added! Processing has started.");
-  return response.json();
+  return data;
 };
 
 export const requestFileUpload = async (replicaId: string, filename: string, title?: string) => {
     const body: { filename: string; title?: string } = { filename };
     if (title) body.title = title;
+    console.log(`[API] Requesting file upload for replica ${replicaId}:`, body);
 
     const response = await fetch(`${SENSAY_API_BASE_URL}/replicas/${replicaId}/knowledge-base`, {
         method: 'POST',
@@ -141,14 +163,18 @@ export const requestFileUpload = async (replicaId: string, filename: string, tit
 
     if (!response.ok) {
         const errorData = await response.json();
+        console.error("[API] Failed to initiate file upload:", errorData);
         showError(`Failed to initiate file upload: ${errorData.message || 'Unknown error'}`);
         return null;
     }
     
-    return response.json();
+    const data = await response.json();
+    console.log("[API] File upload request successful, received signed URL info:", data);
+    return data;
 };
 
 export const uploadFileToSignedUrl = async (signedUrl: string, file: File) => {
+    console.log(`[API] Uploading file "${file.name}" to signed URL.`);
     const response = await fetch(signedUrl, {
         method: 'PUT',
         headers: {
@@ -158,10 +184,12 @@ export const uploadFileToSignedUrl = async (signedUrl: string, file: File) => {
     });
 
     if (!response.ok) {
+        console.error("[API] File upload to signed URL failed:", response.statusText);
         showError('File upload failed.');
         return false;
     }
 
+    console.log("[API] File uploaded successfully to signed URL.");
     showSuccess('File uploaded successfully! Processing has started.');
     return true;
 };
