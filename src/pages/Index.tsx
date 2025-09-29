@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { createUser, getReplicas } from "@/lib/api";
 import { Replica } from "@/types";
-import { PlusCircle, ArrowUpRight, BrainCircuit, AlertTriangle, Bot } from "lucide-react";
+import { PlusCircle, ArrowUpRight, BrainCircuit, AlertTriangle, Bot, BotMessageSquare } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
