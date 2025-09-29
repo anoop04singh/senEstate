@@ -4,9 +4,10 @@ const SENSAY_API_BASE_URL = "https://api.sensay.io/v1";
 const API_VERSION = "2025-03-25";
 const SENSAY_API_KEY = import.meta.env.VITE_SENSAY_API_KEY;
 
-const getHeaders = () => {
+// Headers for requests made on behalf of a user
+const getUserHeaders = () => {
   const userId = localStorage.getItem("sensay_user_id");
-  console.log(`[API] Using User ID: ${userId}`);
+  console.log(`[API] Using User Headers with User ID: ${userId}`);
 
   if (!SENSAY_API_KEY) {
     console.error("[API] API Key not found in .env file.");
@@ -25,6 +26,22 @@ const getHeaders = () => {
 
   return headers;
 };
+
+// Headers for admin-level requests (organization only)
+const getAdminHeaders = () => {
+  console.log("[API] Using Admin Headers (Organization Secret only)");
+  if (!SENSAY_API_KEY) {
+    console.error("[API] API Key not found in .env file.");
+    throw new Error("API Key not found. Please set VITE_SENSAY_API_KEY in your .env file.");
+  }
+
+  return {
+    "Content-Type": "application/json",
+    "X-API-Version": API_VERSION,
+    "X-ORGANIZATION-SECRET": SENSAY_API_KEY,
+  };
+};
+
 
 export const createUser = async (userId: string) => {
   console.log(`[API] Initiating user creation for ID: ${userId}`);
@@ -59,7 +76,7 @@ export const createUser = async (userId: string) => {
 export const getReplicas = async () => {
   console.log("[API] Fetching replicas...");
   const response = await fetch(`${SENSAY_API_BASE_URL}/replicas`, {
-    headers: getHeaders(),
+    headers: getUserHeaders(),
   });
   if (!response.ok) {
     console.error("[API] Failed to fetch AI agents:", response.statusText);
@@ -87,7 +104,7 @@ export const createReplica = async (replicaData: {
 
   const response = await fetch(`${SENSAY_API_BASE_URL}/replicas`, {
     method: "POST",
-    headers: getHeaders(),
+    headers: getUserHeaders(),
     body: JSON.stringify({
       ...replicaData,
       ownerID: userId,
@@ -114,7 +131,7 @@ export const createReplica = async (replicaData: {
 export const getKnowledgeBase = async (replicaId: string) => {
   console.log(`[API] Fetching knowledge base for replica: ${replicaId}`);
   const response = await fetch(`${SENSAY_API_BASE_URL}/replicas/${replicaId}/knowledge-base`, {
-    headers: getHeaders(),
+    headers: getAdminHeaders(),
   });
   if (!response.ok) {
     console.error(`[API] Failed to fetch knowledge base for replica ${replicaId}:`, response.statusText);
@@ -133,7 +150,7 @@ export const addTextKnowledge = async (replicaId: string, text: string, title?: 
 
   const response = await fetch(`${SENSAY_API_BASE_URL}/replicas/${replicaId}/knowledge-base`, {
     method: "POST",
-    headers: getHeaders(),
+    headers: getAdminHeaders(),
     body: JSON.stringify(body),
   });
 
@@ -157,7 +174,7 @@ export const requestFileUpload = async (replicaId: string, filename: string, tit
 
     const response = await fetch(`${SENSAY_API_BASE_URL}/replicas/${replicaId}/knowledge-base`, {
         method: 'POST',
-        headers: getHeaders(),
+        headers: getAdminHeaders(),
         body: JSON.stringify(body),
     });
 
