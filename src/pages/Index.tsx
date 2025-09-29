@@ -10,23 +10,20 @@ import { motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const SENSAY_API_KEY = import.meta.env.VITE_SENSAY_API_KEY;
-const SENSAY_USER_ID = import.meta.env.VITE_SENSAY_USER_ID;
 
 const Index = () => {
   const navigate = useNavigate();
-  const [userId, setUserId] = useState(SENSAY_USER_ID || localStorage.getItem("sensay_user_id") || "");
+  const [userId, setUserId] = useState(localStorage.getItem("sensay_user_id") || "");
   const [replicas, setReplicas] = useState<Replica[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (SENSAY_API_KEY) {
-      const initializeUser = async () => {
-        let currentUserId = SENSAY_USER_ID || localStorage.getItem("sensay_user_id");
-
-        if (!currentUserId) {
-          const newUserId = `agent_${uuidv4()}`;
-          const user = await createUser(newUserId);
+      const storedUserId = localStorage.getItem("sensay_user_id");
+      if (!storedUserId) {
+        const newUserId = `agent_${uuidv4()}`;
+        createUser(newUserId).then((user) => {
           if (user) {
             localStorage.setItem("sensay_user_id", newUserId);
             setUserId(newUserId);
@@ -34,14 +31,10 @@ const Index = () => {
             setError("Failed to initialize user. Please check your API key and refresh.");
             setIsLoading(false);
           }
-        } else {
-          if (localStorage.getItem("sensay_user_id") !== currentUserId) {
-            localStorage.setItem("sensay_user_id", currentUserId);
-          }
-          setUserId(currentUserId);
-        }
-      };
-      initializeUser();
+        });
+      } else {
+        setUserId(storedUserId);
+      }
     } else {
       setIsLoading(false);
     }
@@ -98,7 +91,7 @@ const Index = () => {
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">senEstate Dashboard</h1>
+          <h1 className="text-3xl font-bold">Community AI Agents</h1>
           <p className="text-muted-foreground">Manage, configure, and deploy your real estate assistants.</p>
         </div>
         <Button onClick={() => navigate("/create-agent")}>

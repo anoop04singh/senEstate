@@ -1,7 +1,6 @@
 import { NavLink, Outlet } from "react-router-dom";
 import { ThemeToggle } from "./theme-toggle";
 import { motion } from "framer-motion";
-import Footer from "./Footer";
 
 const Layout = () => {
   return (
@@ -37,7 +36,6 @@ const Layout = () => {
           <Outlet />
         </motion.div>
       </main>
-      <Footer />
     </div>
   );
 };
