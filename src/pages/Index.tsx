@@ -2,85 +2,85 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { createUser, getReplicas } from "@/lib/api";
 import { Replica } from "@/types";
-import { PlusCircle, ArrowUpRight, BrainCircuit } from "lucide-react";
+import { PlusCircle, ArrowUpRight, BrainCircuit, AlertTriangle } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
+
+const SENSAY_API_KEY = import.meta.env.VITE_SENSAY_API_KEY;
 
 const Index = () => {
   const navigate = useNavigate();
-  const [apiKey, setApiKey] = useState(localStorage.getItem("sensay_api_key") || "");
   const [userId, setUserId] = useState(localStorage.getItem("sensay_user_id") || "");
   const [replicas, setReplicas] = useState<Replica[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
-  const handleApiKeySave = () => {
-    localStorage.setItem("sensay_api_key", apiKey);
-    // Check for user ID after saving key
-    if (!userId) {
-      const newUserId = `agent_${uuidv4()}`;
-      createUser(newUserId).then(() => {
-        localStorage.setItem("sensay_user_id", newUserId);
-        setUserId(newUserId);
-      });
-    }
-    window.location.reload(); // Reload to re-initialize API calls with new key
-  };
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const storedApiKey = localStorage.getItem("sensay_api_key");
-    const storedUserId = localStorage.getItem("sensay_user_id");
-
-    if (storedApiKey) {
+    if (SENSAY_API_KEY) {
+      const storedUserId = localStorage.getItem("sensay_user_id");
       if (!storedUserId) {
         const newUserId = `agent_${uuidv4()}`;
         createUser(newUserId).then((user) => {
           if (user) {
             localStorage.setItem("sensay_user_id", newUserId);
             setUserId(newUserId);
+          } else {
+            setError("Failed to initialize user. Please check your API key and refresh.");
+            setIsLoading(false);
           }
         });
       } else {
         setUserId(storedUserId);
       }
-    }
-  }, [apiKey]);
-
-  useEffect(() => {
-    if (apiKey && userId) {
-      setIsLoading(true);
-      getReplicas()
-        .then(setReplicas)
-        .finally(() => setIsLoading(false));
     } else {
       setIsLoading(false);
     }
-  }, [apiKey, userId]);
+  }, []);
 
-  if (!apiKey) {
+  useEffect(() => {
+    if (SENSAY_API_KEY && userId) {
+      setIsLoading(true);
+      getReplicas()
+        .then(setReplicas)
+        .catch(() => setError("Failed to fetch agents."))
+        .finally(() => setIsLoading(false));
+    }
+  }, [userId]);
+
+  if (!SENSAY_API_KEY) {
     return (
       <div className="flex items-center justify-center h-full">
-        <Card className="w-full max-w-md">
+        <Card className="w-full max-w-md text-center">
           <CardHeader>
-            <CardTitle>Welcome</CardTitle>
-            <CardDescription>Please enter your Sensay API Secret to continue.</CardDescription>
+            <CardTitle className="flex items-center justify-center gap-2">
+              <AlertTriangle className="h-6 w-6 text-destructive" />
+              Configuration Needed
+            </CardTitle>
+            <CardDescription>
+              Your Sensay API Key is not configured.
+            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2">
-            <Label htmlFor="apiKey">Sensay API Secret</Label>
-            <Input
-              id="apiKey"
-              type="password"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder="your_secret_token"
-            />
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Please create a <code className="bg-muted px-1 py-0.5 rounded">.env</code> file in the root of your project and add your API key:
+            </p>
+            <pre className="mt-2 p-2 bg-muted rounded text-left text-sm overflow-x-auto">
+              <code>VITE_SENSAY_API_KEY="your_secret_token_here"</code>
+            </pre>
+            <p className="text-sm text-muted-foreground mt-4">
+              After adding the key, you will need to restart the application.
+            </p>
           </CardContent>
-          <CardFooter>
-            <Button onClick={handleApiKeySave}>Save API Key</Button>
-          </CardFooter>
         </Card>
+      </div>
+    );
+  }
+  
+  if (error) {
+    return (
+      <div className="text-center py-16">
+        <h3 className="text-xl font-semibold text-destructive">{error}</h3>
       </div>
     );
   }

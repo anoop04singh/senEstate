@@ -2,19 +2,19 @@ import { showError, showSuccess } from "@/utils/toast";
 
 const SENSAY_API_BASE_URL = "https://api.sensay.io/v1";
 const API_VERSION = "2025-03-25";
+const SENSAY_API_KEY = import.meta.env.VITE_SENSAY_API_KEY;
 
 const getHeaders = () => {
-  const apiKey = localStorage.getItem("sensay_api_key");
   const userId = localStorage.getItem("sensay_user_id");
 
-  if (!apiKey) {
-    throw new Error("API Key not found. Please set it on the dashboard.");
+  if (!SENSAY_API_KEY) {
+    throw new Error("API Key not found. Please set VITE_SENSAY_API_KEY in your .env file.");
   }
 
   const headers: HeadersInit = {
     "Content-Type": "application/json",
     "X-API-Version": API_VERSION,
-    "X-ORGANIZATION-SECRET": apiKey,
+    "X-ORGANIZATION-SECRET": SENSAY_API_KEY,
   };
 
   if (userId) {
@@ -25,15 +25,17 @@ const getHeaders = () => {
 };
 
 export const createUser = async (userId: string) => {
-  const apiKey = localStorage.getItem("sensay_api_key");
-  if (!apiKey) throw new Error("API Key not found.");
+  if (!SENSAY_API_KEY) {
+    showError("API Key not configured.");
+    throw new Error("API Key not found. Please set VITE_SENSAY_API_KEY in your .env file.");
+  }
 
   const response = await fetch(`${SENSAY_API_BASE_URL}/users`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "X-API-Version": API_VERSION,
-      "X-ORGANIZATION-SECRET": apiKey,
+      "X-ORGANIZATION-SECRET": SENSAY_API_KEY,
     },
     body: JSON.stringify({ id: userId }),
   });
