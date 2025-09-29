@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Upload, FileText, Loader2, CheckCircle, XCircle, RefreshCw, Info, Link as LinkIcon } from "lucide-react";
 import { getKnowledgeBase, addTextKnowledge, requestFileUpload, uploadFileToSignedUrl, addUrlKnowledge } from "@/lib/api";
 import { KnowledgeBaseItem } from "@/types";
-import { useState, ChangeEvent, FormEvent, useMemo } from "react";
+import { useState, ChangeEvent, FormEvent } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDistanceToNow } from 'date-fns';
@@ -45,17 +45,10 @@ const ManageKnowledge = () => {
   const [url, setUrl] = useState("");
   const [urlTitle, setUrlTitle] = useState("");
 
-  const terminalStatuses: KnowledgeBaseItem['status'][] = ['VECTOR_CREATED', 'READY', 'UNPROCESSABLE'];
-
   const { data: knowledgeItems = [], isLoading, isError, refetch, isRefetching } = useQuery<KnowledgeBaseItem[]>({
     queryKey: ["knowledgeBase", replicaId],
     queryFn: () => getKnowledgeBase(replicaId!),
     enabled: !!replicaId,
-    refetchInterval: (query) => {
-      const data = query.state.data as KnowledgeBaseItem[] | undefined;
-      const isProcessing = data?.some(item => !terminalStatuses.includes(item.status));
-      return isProcessing ? 5000 : false;
-    },
   });
 
   const addTextMutation = useMutation({
