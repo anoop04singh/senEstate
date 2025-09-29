@@ -76,7 +76,7 @@ export const createUser = async (userId: string) => {
 export const getReplicas = async () => {
   console.log("[API] Fetching replicas...");
   const response = await fetch(`${SENSAY_API_BASE_URL}/replicas`, {
-    headers: getUserHeaders(),
+    headers: getAdminHeaders(),
   });
   if (!response.ok) {
     console.error("[API] Failed to fetch AI agents:", response.statusText);
@@ -104,7 +104,7 @@ export const createReplica = async (replicaData: {
 
   const response = await fetch(`${SENSAY_API_BASE_URL}/replicas`, {
     method: "POST",
-    headers: getUserHeaders(),
+    headers: getAdminHeaders(),
     body: JSON.stringify({
       ...replicaData,
       ownerID: userId,
