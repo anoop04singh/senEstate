@@ -82,7 +82,7 @@ export const getReplica = async (replicaId: string) => {
 };
 
 export const createReplica = async (replicaData: {
-  name: string; shortDescription: string; greeting: string; slug: string; profileImage?: string;
+  name: string; shortDescription: string; greeting: string; slug: string;
 }) => {
   const userId = localStorage.getItem("sensay_user_id");
   if (!userId) { showError("User ID not found. Cannot create agent."); return null; }
@@ -91,10 +91,9 @@ export const createReplica = async (replicaData: {
     method: "POST", headers: getAdminHeaders(),
     body: JSON.stringify({
       name: replicaData.name,
-      short_description: replicaData.shortDescription,
-      introduction: replicaData.greeting,
+      shortDescription: replicaData.shortDescription,
+      greeting: replicaData.greeting,
       slug: replicaData.slug,
-      profile_image: replicaData.profileImage || null,
       ownerID: userId,
       llm: { provider: "openai", model: "gpt-4o" },
     }),

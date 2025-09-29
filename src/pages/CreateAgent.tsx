@@ -23,7 +23,6 @@ const formSchema = z.object({
   shortDescription: z.string().min(10, "Description must be at least 10 characters."),
   greeting: z.string().min(10, "Welcome message must be at least 10 characters."),
   slug: z.string().min(3, "URL slug must be at least 3 characters.").regex(/^[a-z0-9-]+$/, "Slug can only contain lowercase letters, numbers, and hyphens."),
-  profileImage: z.string().url("Must be a valid URL.").optional().or(z.literal('')),
 });
 
 const CreateAgent = () => {
@@ -37,7 +36,6 @@ const CreateAgent = () => {
       shortDescription: "",
       greeting: "",
       slug: "",
-      profileImage: "",
     },
   });
 
@@ -78,19 +76,6 @@ const CreateAgent = () => {
                     <FormLabel>AI Assistant Name</FormLabel>
                     <FormControl>
                       <Input placeholder="e.g., John's Real Estate Assistant" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="profileImage"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Profile Image URL (Optional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="https://example.com/image.png" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
