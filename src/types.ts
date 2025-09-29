@@ -15,3 +15,9 @@ export interface KnowledgeBaseItem {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface Message {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+}

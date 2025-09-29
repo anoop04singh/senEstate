@@ -114,7 +114,7 @@ const Index = () => {
                     Manage Knowledge
                   </Button>
                 </Link>
-                <a href={`/agent/${replica.slug}`} target="_blank" rel="noopener noreferrer">
+                <a href={`/agent/${replica.uuid}`} target="_blank" rel="noopener noreferrer">
                   <Button variant="ghost">
                     View Live Page <ArrowUpRight className="ml-2 h-4 w-4" />
                   </Button>

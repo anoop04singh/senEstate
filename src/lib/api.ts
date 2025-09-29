@@ -88,6 +88,21 @@ export const getReplicas = async () => {
   return data.items || [];
 };
 
+export const getReplica = async (replicaId: string) => {
+  console.log(`[API] Fetching replica: ${replicaId}`);
+  const response = await fetch(`${SENSAY_API_BASE_URL}/replicas/${replicaId}`, {
+    headers: getAdminHeaders(),
+  });
+  if (!response.ok) {
+    console.error(`[API] Failed to fetch replica ${replicaId}:`, response.statusText);
+    showError("Failed to fetch AI agent details.");
+    return null;
+  }
+  const data = await response.json();
+  console.log(`[API] Replica ${replicaId} fetched successfully:`, data);
+  return data;
+};
+
 export const createReplica = async (replicaData: {
   name: string;
   shortDescription: string;
@@ -125,6 +140,26 @@ export const createReplica = async (replicaData: {
   const data = await response.json();
   console.log("[API] AI Agent created successfully:", data);
   showSuccess("AI Agent created successfully!");
+  return data;
+};
+
+export const sendChatMessage = async (replicaId: string, content: string) => {
+  console.log(`[API] Sending chat message to replica ${replicaId}`);
+  const response = await fetch(`${SENSAY_API_BASE_URL}/replicas/${replicaId}/chat/completions`, {
+    method: 'POST',
+    headers: getUserHeaders(),
+    body: JSON.stringify({ content }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    console.error("[API] Failed to send chat message:", errorData);
+    showError(`Failed to send message: ${errorData.message || 'Unknown error'}`);
+    return null;
+  }
+
+  const data = await response.json();
+  console.log("[API] Chat message response received:", data);
   return data;
 };
 

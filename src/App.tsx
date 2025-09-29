@@ -24,7 +24,7 @@ const App = () => (
             <Route path="/create-agent" element={<CreateAgent />} />
             <Route path="/manage-knowledge/:replicaId" element={<ManageKnowledge />} />
           </Route>
-          <Route path="/agent/:slug" element={<AgentChat />} />
+          <Route path="/agent/:replicaId" element={<AgentChat />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
