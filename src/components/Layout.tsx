@@ -1,5 +1,4 @@
 import { NavLink, Outlet } from "react-router-dom";
-import { BotMessageSquare } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 import { motion } from "framer-motion";
 
@@ -9,8 +8,8 @@ const Layout = () => {
       <header className="bg-card/80 border-b backdrop-blur-lg sticky top-0 z-50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <NavLink to="/" className="flex items-center gap-2 font-semibold text-lg">
-            <BotMessageSquare className="h-6 w-6 text-primary" />
-            <span>Real Estate AI Agents</span>
+            <img src="/logo-light-theme.png" alt="senEstate Logo" className="h-6 block dark:hidden" />
+            <img src="/logo-dark-theme.png" alt="senEstate Logo" className="h-6 hidden dark:block" />
           </NavLink>
           <div className="flex items-center gap-2">
             <nav className="flex items-center gap-4">

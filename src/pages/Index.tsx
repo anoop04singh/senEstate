@@ -91,7 +91,7 @@ const Index = () => {
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Your AI Agents</h1>
+          <h1 className="text-3xl font-bold">Community AI Agents</h1>
           <p className="text-muted-foreground">Manage, configure, and deploy your real estate assistants.</p>
         </div>
         <Button onClick={() => navigate("/create-agent")}>
