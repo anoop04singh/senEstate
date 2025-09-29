@@ -20,42 +20,56 @@ The modern real estate market is demanding, with clients expecting immediate res
 -   **Light & Dark Mode:** A sleek interface that adapts to user preferences.
 -   **Powered by Sensay:** Built on a robust and scalable AI platform for reliable performance.
 
-## Application Structure
+## Architecture Overview
 
-The project follows a standard React (Vite) structure, organizing files by their function for clarity and maintainability.
+The application operates as a client-side interface that communicates directly with the Sensay API. There is no custom backend, which simplifies deployment and maintenance. All data, including AI agents (replicas) and their knowledge, is stored and managed by Sensay.
+
+The diagram below illustrates the workflow:
 
 ```ascii
-senEstate/
-├── public/
-│   ├── logo-dark-theme.png
-│   ├── logo-light-theme.png
-│   ├── favicon-dark-theme.png
-│   └── favicon-light-theme.png
-├── src/
-│   ├── components/
-│   │   ├── ui/                 # Shadcn UI components
-│   │   ├── Layout.tsx          # Main app layout (header, main content)
-│   │   └── theme-provider.tsx  # Theming logic
-│   ├── hooks/
-│   │   └── use-toast.ts        # Toast notification hook
-│   ├── lib/
-│   │   ├── api.ts              # All Sensay API interactions
-│   │   └── utils.ts            # Utility functions (e.g., cn)
-│   ├── pages/
-│   │   ├── Index.tsx           # Dashboard to view all agents
-│   │   ├── CreateAgent.tsx     # Form to create a new agent
-│   │   ├── ManageKnowledge.tsx # Add property listings to an agent
-│   │   ├── AgentChat.tsx       # The public-facing chat interface
-│   │   └── NotFound.tsx        # 404 page
-│   ├── App.tsx                 # Main component with all routes
-│   ├── globals.css             # Global styles and Tailwind CSS setup
-│   └── main.tsx                # Application entry point
-├── .env                        # Environment variables (API Key) - NOT committed
-├── .gitignore                  # Files to ignore in git
-├── index.html                  # Main HTML file
-├── package.json                # Project dependencies and scripts
-└── README.md                   # This documentation file
++-------------------------+      +--------------------------------+
+|      User's Browser     |      |        End User's Browser      |
+| (Real Estate Agent)     |      |        (Potential Client)      |
++-------------------------+      +--------------------------------+
+            |                                      |
+            | (HTTPS Requests)                     | (HTTPS Requests)
+            v                                      v
++----------------------------------------------------------------+
+|                    React Frontend (senEstate)                    |
+|----------------------------------------------------------------|
+| - Dashboard (View Agents)                                      |
+| - Create Agent Form                                            |
+| - Knowledge Management Form (Add/Remove Property Listings)     |
+| - Live Chat Interface                                          |
++----------------------------------------------------------------+
+            |
+            | (Secure API Calls with VITE_SENSAY_API_KEY)
+            v
++----------------------------------------------------------------+
+|                        Sensay API Backend                        |
+|----------------------------------------------------------------|
+|                                                                |
+|  [POST /replicas] <----------- Create a new AI Agent           |
+|  [GET /replicas]  <------------ Fetch all agents for Dashboard |
+|                                                                |
+|  [POST /replicas/{id}/knowledge-base] <-- Add Property Listing |
+|  [GET /replicas/{id}/knowledge-base]  <-- View Knowledge Items |
+|  [DELETE /replicas/{id}/knowledge-base/{kb_id}] <-- Delete Item|
+|                                                                |
+|  [POST /replicas/{id}/chat/completions] <-- Send/Receive Chat  |
+|                                                                |
++----------------------------------------------------------------+
 ```
+
+### Workflow Explained:
+
+1.  **Admin (Real Estate Agent):** The agent uses the senEstate dashboard to manage their AI assistants.
+    -   **Creating an Agent:** The "Create Agent" form sends a `POST` request to `/replicas` on the Sensay API.
+    -   **Managing Knowledge:** Adding a property listing sends a `POST` request to the `/replicas/{id}/knowledge-base` endpoint. The dashboard fetches existing knowledge with a `GET` request to the same endpoint.
+2.  **Client (Home Buyer):** The client interacts with the AI through the public-facing chat page.
+    -   **Chatting:** Each message sent by the client triggers a `POST` request to the `/replicas/{id}/chat/completions` endpoint. The AI's response is received from the Sensay API and displayed in the chat interface.
+
+All state and data are managed by Sensay, making the frontend a stateless and highly scalable interface.
 
 ## Setup Instructions
 
