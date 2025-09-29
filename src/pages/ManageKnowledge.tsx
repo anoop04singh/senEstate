@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Upload, FileText, Loader2, CheckCircle, XCircle, RefreshCw, Info, Link as LinkIcon } from "lucide-react";
+import { Upload, FileText, Loader2, CheckCircle, XCircle, RefreshCw, Info, Link as LinkIcon, Home } from "lucide-react";
 import { getKnowledgeBase, addTextKnowledge, requestFileUpload, uploadFileToSignedUrl, addUrlKnowledge } from "@/lib/api";
 import { KnowledgeBaseItem } from "@/types";
 import { useState, ChangeEvent, FormEvent } from "react";
@@ -13,6 +13,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { formatDistanceToNow } from 'date-fns';
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 
 const StatusBadge = ({ status }: { status: KnowledgeBaseItem['status'] }) => {
   const statusMap: { [key in KnowledgeBaseItem['status']]: { label: string; className: string; icon: JSX.Element } } = {
@@ -34,6 +38,17 @@ const StatusBadge = ({ status }: { status: KnowledgeBaseItem['status'] }) => {
     </Badge>
   );
 };
+
+const propertyListingSchema = z.object({
+  address: z.string().min(5, "Address is required."),
+  price: z.coerce.number().positive("Price must be a positive number."),
+  bedrooms: z.coerce.number().int().min(0, "Bedrooms cannot be negative."),
+  bathrooms: z.coerce.number().min(0, "Bathrooms cannot be negative."),
+  sqft: z.coerce.number().int().positive("Square footage must be a positive number."),
+  description: z.string().min(10, "Description is required."),
+  virtualTourUrl: z.string().url("Must be a valid URL.").optional().or(z.literal('')),
+  photoUrls: z.string().optional(),
+});
 
 const ManageKnowledge = () => {
   const { replicaId } = useParams<{ replicaId: string }>();
@@ -89,6 +104,40 @@ const ManageKnowledge = () => {
     },
   });
 
+  const listingForm = useForm<z.infer<typeof propertyListingSchema>>({
+    resolver: zodResolver(propertyListingSchema),
+    defaultValues: {
+      address: "",
+      price: 0,
+      bedrooms: 0,
+      bathrooms: 0,
+      sqft: 0,
+      description: "",
+      virtualTourUrl: "",
+      photoUrls: "",
+    },
+  });
+
+  function onListingSubmit(values: z.infer<typeof propertyListingSchema>) {
+    const photoUrlsArray = values.photoUrls
+      ? values.photoUrls.split(',').map(url => url.trim()).filter(url => url)
+      : [];
+      
+    const listingJson = {
+      ...values,
+      photoUrls: photoUrlsArray,
+    };
+
+    const content = JSON.stringify(listingJson, null, 2);
+    const title = `Property Listing: ${values.address}`;
+
+    addTextMutation.mutate({ text: content, title: title }, {
+      onSuccess: () => {
+        listingForm.reset();
+      }
+    });
+  }
+
   const handleTextSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (textContent.trim() && !addTextMutation.isPending) {
@@ -127,10 +176,11 @@ const ManageKnowledge = () => {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="text">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="text">Add Text</TabsTrigger>
               <TabsTrigger value="file">Upload File</TabsTrigger>
               <TabsTrigger value="url">Add from URL</TabsTrigger>
+              <TabsTrigger value="listing">Add Property Listing</TabsTrigger>
             </TabsList>
             <TabsContent value="text" className="pt-6">
               <form onSubmit={handleTextSubmit} className="space-y-4">
@@ -179,6 +229,76 @@ const ManageKnowledge = () => {
                   Add from URL
                 </Button>
               </form>
+            </TabsContent>
+            <TabsContent value="listing" className="pt-6">
+              <Form {...listingForm}>
+                <form onSubmit={listingForm.handleSubmit(onListingSubmit)} className="space-y-4">
+                  <FormField control={listingForm.control} name="address" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Property Address</FormLabel>
+                      <FormControl><Input placeholder="e.g., 123 Main St, Anytown, USA" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField control={listingForm.control} name="price" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Price ($)</FormLabel>
+                        <FormControl><Input type="number" placeholder="e.g., 500000" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={listingForm.control} name="sqft" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Square Footage</FormLabel>
+                        <FormControl><Input type="number" placeholder="e.g., 2000" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField control={listingForm.control} name="bedrooms" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Bedrooms</FormLabel>
+                        <FormControl><Input type="number" placeholder="e.g., 3" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={listingForm.control} name="bathrooms" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Bathrooms</FormLabel>
+                        <FormControl><Input type="number" step="0.5" placeholder="e.g., 2.5" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </div>
+                  <FormField control={listingForm.control} name="description" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl><Textarea placeholder="e.g., A beautiful home with a large yard..." {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={listingForm.control} name="virtualTourUrl" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Virtual Tour URL (Optional)</FormLabel>
+                      <FormControl><Input placeholder="https://example.com/virtual-tour" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={listingForm.control} name="photoUrls" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Photo Gallery URLs (Optional)</FormLabel>
+                      <FormControl><Textarea placeholder="Enter image URLs, separated by commas" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <Button type="submit" disabled={addTextMutation.isPending}>
+                    {addTextMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Home className="mr-2 h-4 w-4" />}
+                    Add Property Listing
+                  </Button>
+                </form>
+              </Form>
             </TabsContent>
           </Tabs>
         </CardContent>
