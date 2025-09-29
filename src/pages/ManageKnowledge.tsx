@@ -11,6 +11,7 @@ import { useState, ChangeEvent, FormEvent } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDistanceToNow } from 'date-fns';
+import { Label } from "@/components/ui/label";
 
 const StatusBadge = ({ status }: { status: KnowledgeBaseItem['status'] }) => {
   const statusMap: { [key in KnowledgeBaseItem['status']]: { label: string; className: string; icon: JSX.Element } } = {
@@ -37,7 +38,9 @@ const ManageKnowledge = () => {
   const { replicaId } = useParams<{ replicaId: string }>();
   const queryClient = useQueryClient();
   const [textContent, setTextContent] = useState("");
+  const [textTitle, setTextTitle] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [fileTitle, setFileTitle] = useState("");
 
   const { data: knowledgeItems = [], isLoading, isError, refetch, isRefetching } = useQuery<KnowledgeBaseItem[]>({
     queryKey: ["knowledgeBase", replicaId],
@@ -46,18 +49,20 @@ const ManageKnowledge = () => {
   });
 
   const addTextMutation = useMutation({
-    mutationFn: (text: string) => addTextKnowledge(replicaId!, text),
+    mutationFn: (data: { text: string; title?: string }) => addTextKnowledge(replicaId!, data.text, data.title),
     onSuccess: () => {
       setTextContent("");
+      setTextTitle("");
       setTimeout(() => queryClient.invalidateQueries({ queryKey: ["knowledgeBase", replicaId] }), 1000);
     },
   });
 
   const fileUploadMutation = useMutation({
-    mutationFn: async (file: File) => {
-      const uploadRequest = await requestFileUpload(replicaId!, file.name);
-      if (uploadRequest && uploadRequest.signedURL) {
-        const success = await uploadFileToSignedUrl(uploadRequest.signedURL, file);
+    mutationFn: async (data: { file: File; title?: string }) => {
+      const { file, title } = data;
+      const uploadRequest = await requestFileUpload(replicaId!, file.name, title);
+      if (uploadRequest && uploadRequest.results && uploadRequest.results.length > 0 && uploadRequest.results[0].signedURL) {
+        const success = await uploadFileToSignedUrl(uploadRequest.results[0].signedURL, file);
         if (!success) throw new Error("Upload failed");
       } else {
         throw new Error("Could not get upload URL");
@@ -65,6 +70,7 @@ const ManageKnowledge = () => {
     },
     onSuccess: () => {
       setSelectedFile(null);
+      setFileTitle("");
       const fileInput = document.getElementById('file-input') as HTMLInputElement;
       if(fileInput) fileInput.value = "";
       setTimeout(() => queryClient.invalidateQueries({ queryKey: ["knowledgeBase", replicaId] }), 1000);
@@ -74,7 +80,7 @@ const ManageKnowledge = () => {
   const handleTextSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (textContent.trim() && !addTextMutation.isPending) {
-      addTextMutation.mutate(textContent.trim());
+      addTextMutation.mutate({ text: textContent.trim(), title: textTitle.trim() || undefined });
     }
   };
 
@@ -87,7 +93,7 @@ const ManageKnowledge = () => {
   const handleFileUpload = (e: FormEvent) => {
     e.preventDefault();
     if (selectedFile && !fileUploadMutation.isPending) {
-      fileUploadMutation.mutate(selectedFile);
+      fileUploadMutation.mutate({ file: selectedFile, title: fileTitle.trim() || undefined });
     }
   };
 
@@ -103,7 +109,14 @@ const ManageKnowledge = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleFileUpload} className="space-y-4">
-              <Input id="file-input" type="file" onChange={handleFileChange} />
+              <div className="space-y-2">
+                <Label htmlFor="file-title">Title (Optional)</Label>
+                <Input id="file-title" placeholder="e.g., 123 Main St Brochure" value={fileTitle} onChange={(e) => setFileTitle(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="file-input">File</Label>
+                <Input id="file-input" type="file" onChange={handleFileChange} />
+              </div>
               <Button type="submit" disabled={!selectedFile || fileUploadMutation.isPending}>
                 {fileUploadMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
                 Upload File
@@ -118,12 +131,20 @@ const ManageKnowledge = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleTextSubmit} className="space-y-4">
-              <Textarea 
-                placeholder="Enter text content here..." 
-                rows={4} 
-                value={textContent}
-                onChange={(e) => setTextContent(e.target.value)}
-              />
+              <div className="space-y-2">
+                <Label htmlFor="text-title">Title (Optional)</Label>
+                <Input id="text-title" placeholder="e.g., Common Buyer Questions" value={textTitle} onChange={(e) => setTextTitle(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="text-content">Content</Label>
+                <Textarea 
+                  id="text-content"
+                  placeholder="Enter text content here..." 
+                  rows={4} 
+                  value={textContent}
+                  onChange={(e) => setTextContent(e.target.value)}
+                />
+              </div>
               <Button type="submit" disabled={!textContent.trim() || addTextMutation.isPending}>
                 {addTextMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
                 Add Text

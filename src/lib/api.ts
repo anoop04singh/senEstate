@@ -109,11 +109,14 @@ export const getKnowledgeBase = async (replicaId: string) => {
   return data.items || [];
 };
 
-export const addTextKnowledge = async (replicaId: string, text: string) => {
+export const addTextKnowledge = async (replicaId: string, text: string, title?: string) => {
+  const body: { text: string; title?: string } = { text };
+  if (title) body.title = title;
+
   const response = await fetch(`${SENSAY_API_BASE_URL}/replicas/${replicaId}/knowledge-base`, {
     method: "POST",
     headers: getHeaders(),
-    body: JSON.stringify({ text }),
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {
@@ -126,11 +129,14 @@ export const addTextKnowledge = async (replicaId: string, text: string) => {
   return response.json();
 };
 
-export const requestFileUpload = async (replicaId: string, filename: string) => {
+export const requestFileUpload = async (replicaId: string, filename: string, title?: string) => {
+    const body: { filename: string; title?: string } = { filename };
+    if (title) body.title = title;
+
     const response = await fetch(`${SENSAY_API_BASE_URL}/replicas/${replicaId}/knowledge-base`, {
         method: 'POST',
         headers: getHeaders(),
-        body: JSON.stringify({ filename }),
+        body: JSON.stringify(body),
     });
 
     if (!response.ok) {
