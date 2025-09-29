@@ -96,3 +96,66 @@ export const createReplica = async (replicaData: {
   showSuccess("AI Agent created successfully!");
   return response.json();
 };
+
+export const getKnowledgeBase = async (replicaId: string) => {
+  const response = await fetch(`${SENSAY_API_BASE_URL}/replicas/${replicaId}/knowledge-base`, {
+    headers: getHeaders(),
+  });
+  if (!response.ok) {
+    showError("Failed to fetch knowledge base.");
+    return [];
+  }
+  const data = await response.json();
+  return data.items || [];
+};
+
+export const addTextKnowledge = async (replicaId: string, text: string) => {
+  const response = await fetch(`${SENSAY_API_BASE_URL}/replicas/${replicaId}/knowledge-base`, {
+    method: "POST",
+    headers: getHeaders(),
+    body: JSON.stringify({ text }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    showError(`Failed to add text knowledge: ${errorData.message || 'Unknown error'}`);
+    return null;
+  }
+  
+  showSuccess("Text knowledge added! Processing has started.");
+  return response.json();
+};
+
+export const requestFileUpload = async (replicaId: string, filename: string) => {
+    const response = await fetch(`${SENSAY_API_BASE_URL}/replicas/${replicaId}/knowledge-base`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ filename }),
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        showError(`Failed to initiate file upload: ${errorData.message || 'Unknown error'}`);
+        return null;
+    }
+    
+    return response.json();
+};
+
+export const uploadFileToSignedUrl = async (signedUrl: string, file: File) => {
+    const response = await fetch(signedUrl, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': file.type,
+        },
+        body: file,
+    });
+
+    if (!response.ok) {
+        showError('File upload failed.');
+        return false;
+    }
+
+    showSuccess('File uploaded successfully! Processing has started.');
+    return true;
+};
