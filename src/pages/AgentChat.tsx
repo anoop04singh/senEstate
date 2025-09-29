@@ -11,6 +11,7 @@ import { v4 as uuidv4 } from "uuid";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import Footer from "@/components/Footer";
 
 const AgentChat = () => {
   const { replicaId } = useParams<{ replicaId: string }>();
@@ -70,77 +71,80 @@ const AgentChat = () => {
   }
 
   return (
-    <div className="flex justify-center items-center h-screen bg-background p-4">
-      <Card className="w-full max-w-2xl h-full flex flex-col shadow-2xl">
-        <CardHeader className="flex flex-row items-center gap-4 border-b">
-          <Avatar>
-            <AvatarImage src={replica.profile_image} alt={replica.name} />
-            <AvatarFallback><Bot /></AvatarFallback>
-          </Avatar>
-          <div>
-            <CardTitle>{replica.name}</CardTitle>
-            <CardDescription>{replica.short_description}</CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent ref={scrollAreaRef} className="flex-1 overflow-y-auto p-4 space-y-4">
-          <AnimatePresence>
-            {messages.map((message) => (
-              <motion.div
-                key={message.id}
-                layout
-                initial={{ opacity: 0, scale: 0.8, y: 50 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className={cn(
-                  "flex items-start gap-3 max-w-[80%]",
-                  message.role === "user" ? "ml-auto flex-row-reverse" : ""
-                )}
-              >
-                <Avatar className="w-8 h-8">
-                  <AvatarFallback>
-                    {message.role === 'assistant' ? <Bot size={18} /> : <User size={18} />}
-                  </AvatarFallback>
-                </Avatar>
-                <div
+    <div className="flex flex-col h-screen bg-background">
+      <div className="flex-1 flex justify-center items-center p-4 overflow-hidden">
+        <Card className="w-full max-w-2xl h-full flex flex-col shadow-2xl">
+          <CardHeader className="flex flex-row items-center gap-4 border-b">
+            <Avatar>
+              <AvatarImage src={replica.profile_image} alt={replica.name} />
+              <AvatarFallback><Bot /></AvatarFallback>
+            </Avatar>
+            <div>
+              <CardTitle>{replica.name}</CardTitle>
+              <CardDescription>{replica.short_description}</CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent ref={scrollAreaRef} className="flex-1 overflow-y-auto p-4 space-y-4">
+            <AnimatePresence>
+              {messages.map((message) => (
+                <motion.div
+                  key={message.id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.8, y: 50 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
                   className={cn(
-                    "rounded-lg p-3 text-sm shadow",
-                    message.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
+                    "flex items-start gap-3 max-w-[80%]",
+                    message.role === "user" ? "ml-auto flex-row-reverse" : ""
                   )}
                 >
-                  <p className="whitespace-pre-wrap">{message.content}</p>
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-          {chatMutation.isPending && (
-             <div className="flex items-start gap-3">
-               <Avatar className="w-8 h-8">
-                 <AvatarFallback><Bot size={18} /></AvatarFallback>
-               </Avatar>
-               <div className="bg-muted rounded-lg p-3 text-sm shadow">
-                 <Loader2 className="h-4 w-4 animate-spin" />
+                  <Avatar className="w-8 h-8">
+                    <AvatarFallback>
+                      {message.role === 'assistant' ? <Bot size={18} /> : <User size={18} />}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div
+                    className={cn(
+                      "rounded-lg p-3 text-sm shadow",
+                      message.role === "user"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted"
+                    )}
+                  >
+                    <p className="whitespace-pre-wrap">{message.content}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+            {chatMutation.isPending && (
+               <div className="flex items-start gap-3">
+                 <Avatar className="w-8 h-8">
+                   <AvatarFallback><Bot size={18} /></AvatarFallback>
+                 </Avatar>
+                 <div className="bg-muted rounded-lg p-3 text-sm shadow">
+                   <Loader2 className="h-4 w-4 animate-spin" />
+                 </div>
                </div>
-             </div>
-          )}
-        </CardContent>
-        <div className="p-4 border-t bg-background">
-          <form onSubmit={handleSubmit} className="relative">
-            <Input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask a question..."
-              className="pr-16"
-              disabled={chatMutation.isPending}
-            />
-            <Button type="submit" size="icon" className="absolute top-1/2 right-1 -translate-y-1/2" disabled={chatMutation.isPending || !input.trim()}>
-              <Send className="h-4 w-4" />
-            </Button>
-          </form>
-        </div>
-      </Card>
+            )}
+          </CardContent>
+          <div className="p-4 border-t bg-background">
+            <form onSubmit={handleSubmit} className="relative">
+              <Input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Ask a question..."
+                className="pr-16"
+                disabled={chatMutation.isPending}
+              />
+              <Button type="submit" size="icon" className="absolute top-1/2 right-1 -translate-y-1/2" disabled={chatMutation.isPending || !input.trim()}>
+                <Send className="h-4 w-4" />
+              </Button>
+            </form>
+          </div>
+        </Card>
+      </div>
+      <Footer />
     </div>
   );
 };
